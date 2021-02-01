@@ -25,19 +25,22 @@
 
 		},
 		methods: {
+			logAppend(message) {
+				this.responseText = this.responseText.concat('<br/>===================<br/>').concat(message)
+			},
 			testGet() {
 				get().then(res => {
 					console.log('res:', res);
-					this.responseText = this.responseText.concat('<br/>===================<br/>').concat(JSON.stringify(res))
+					this.logAppend(JSON.stringify(res))
 				})
 			},
 			testDownload() {
 				downloadFile(e => {
 					this.responseText = this.responseText.concat('<br/>').concat(JSON.stringify(e))
 				}).then(res => {
-					this.responseText = this.responseText.concat('<br/>===================<br/>').concat(JSON.stringify(res))
+					this.logAppend(JSON.stringify(res))
 				}).catch(e => {
-					this.responseText = this.responseText.concat('<br/>===================<br/>').concat(JSON.stringify(e))
+					this.logAppend(JSON.stringify(e))
 				})
 			}
 
