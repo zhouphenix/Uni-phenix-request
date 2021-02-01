@@ -1,52 +1,66 @@
 <template>
 	<view class="content">
-		<image class="logo" src="/static/logo.png"></image>
-		<view class="text-area">
-			<text class="title">{{title}}</text>
+		<view class="response" v-html="responseText">
+		</view>
+
+		<view class="button-group">
+			<button type="primary" @click="testGet()">get请求</button>
+			<button type="primary" @click="testDownload()">download请求</button>
 		</view>
 	</view>
 </template>
 
 <script>
+	import {
+		get,
+		downloadFile
+	} from '@/api/home/index.js'
 	export default {
 		data() {
 			return {
-				title: 'Hello'
+				responseText: 'Hello'
 			}
 		},
 		onLoad() {
 
 		},
 		methods: {
+			testGet() {
+				get().then(res => {
+					console.log('res:', res);
+					this.responseText = this.responseText.concat('<br/>===================<br/>').concat(JSON.stringify(res))
+				})
+			},
+			testDownload() {
+				downloadFile(e => {
+					this.responseText = this.responseText.concat('<br/>').concat(JSON.stringify(e))
+				}).then(res => {
+					this.responseText = this.responseText.concat('<br/>===================<br/>').concat(JSON.stringify(res))
+				}).catch(e => {
+					this.responseText = this.responseText.concat('<br/>===================<br/>').concat(JSON.stringify(e))
+				})
+			}
 
 		}
 	}
 </script>
 
-<style>
+<style lang="scss" scoped>
 	.content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-	}
 
-	.logo {
-		height: 200rpx;
-		width: 200rpx;
-		margin-top: 200rpx;
-		margin-left: auto;
-		margin-right: auto;
-		margin-bottom: 50rpx;
-	}
+		.response {
+			height: 80vh;
+			padding: 20px;
+			overflow-y: auto;
+			word-break: break-word;
+		}
 
-	.text-area {
-		display: flex;
-		justify-content: center;
-	}
-
-	.title {
-		font-size: 36rpx;
-		color: #8f8f94;
+		.button-group {
+			display: flex;
+		}
 	}
 </style>

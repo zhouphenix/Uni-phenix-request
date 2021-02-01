@@ -8,7 +8,6 @@ const interceptors = {
 			this.interceptors.push(func)
 		},
 		intercept(config, url, method, data) {
-			console.log(`--> request:intercept(${this.interceptors.length}) `, config, url, method, data);
 			this.interceptors.forEach(it => {
 				config = it(config, url, method, data)
 			})
@@ -21,7 +20,6 @@ const interceptors = {
 			this.interceptors.push(func)
 		},
 		intercept(response, url, method, data) {
-			console.log(`--> response:intercept(${this.interceptors.length}) `, response, url, method, data);
 			this.interceptors.forEach(it => {
 				response = it(response, url, method, data)
 			})
