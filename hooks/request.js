@@ -28,8 +28,6 @@ const interceptors = {
 	}
 }
 
-
-
 export default function({
 	baseUrl,
 	timeout = 15000,
@@ -89,7 +87,7 @@ export default function({
 					requestTask.abort() // 执行取消请求方法
 					reject('网络请求时间超时') // reject 原因
 				}, timeout || 15000) // 设定检测超时定时器
-
+				
 				requestTask = uni.request({
 					url: url[0] === '/' ? baseUrl + url : url,
 					data,
@@ -111,7 +109,6 @@ export default function({
 					},
 
 					fail: res => { // 网络请求失败
-						console.error('fail::', res)
 						// 清除检测超时定时器
 						clearTimeout(timer)
 						if (aborted) {
@@ -210,7 +207,6 @@ export default function({
 					},
 
 					fail: res => { // 网络请求失败
-						console.error('fail::', res)
 						// 清除检测超时定时器
 						clearTimeout(timer)
 						if (aborted) {
@@ -244,8 +240,6 @@ export default function({
 
 			return proxy
 		},
-
-
 		get(url, data, header) {
 			return this.request({
 				url,

@@ -1,46 +1,115 @@
 <template>
 	<view class="content">
-		<view class="response" v-html="responseText">
+		<view class="button-group">
+			<button type="default" @click="testGet()">GET</button>
+			<button type="default" @click="testPost()">POST</button>
+			<button type="default" @click="testPut()">PUT</button>
+			<button type="default" @click="testDelete()">DELETE</button>
+			<button type="default" @click="testUpload()">UPLOAD</button>
+			<button type="default" @click="testDownload()">DOWNLOAD</button>
 		</view>
 
-		<view class="button-group">
-			<button type="primary" @click="testGet()">get请求</button>
-			<button type="primary" @click="testDownload()">download请求</button>
+		<view class="response" v-html="responseText">
 		</view>
 	</view>
 </template>
 
 <script>
 	import {
-		get,
+		_get,
+		_post,
+		customGet,
 		downloadFile
 	} from '@/api/home/index.js'
 	export default {
 		data() {
 			return {
-				responseText: 'Hello'
+				responseText: 'Hello demo: [接口地址https://api.xiaobaibk.com/]',
+				isLoading: false
 			}
 		},
-		onLoad() {
-
+		onLoad() {},
+		watch: {
+			isLoading(val) {
+				if(val) {
+					uni.showLoading({
+						title:'LOADING...'
+					})
+				}else {
+					uni.hideLoading()
+				}
+			}
 		},
 		methods: {
 			logAppend(message) {
-				this.responseText = this.responseText.concat('<br/>===================<br/>').concat(message)
+				this.responseText = this.responseText.concat(message)
+			},
+			logRequest(method = 'GET', suffix = 'START') {
+				this.logAppend(
+					`<p style='color: blue;text-align:center; line-height: 30px;'>========${method}=${suffix}========</p>`)
 			},
 			testGet() {
-				get().then(res => {
+				this.logRequest('GET','根据域名查询百度收录')
+				this.isLoading = true
+				_get().then(res => {
 					console.log('res:', res);
-					this.logAppend(JSON.stringify(res))
+					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logRequest('GET', 'END')
+					this.isLoading = false
+				}).catch(e => {
+					this.isLoading = false
+					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logRequest('GET', 'ERROR END')
+				})
+				/* customGet().then(res => {
+					console.log('res:', res);
+					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logRequest('GET', 'END')
+					this.isLoading = false
+				}).catch(e => {
+					this.isLoading = false
+					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logRequest('GET', 'ERROR END')
+				}) */
+			},
+			testPost() {
+				this.logRequest('POST', '随机获取一条txt语句')
+				this.isLoading = true
+				_post().then(res => {
+					console.log('res:', res);
+					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logRequest('POST', 'END')
+					this.isLoading = false
+				}).catch(e => {
+					this.isLoading = false
+					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logRequest('POST', 'ERROR END')
 				})
 			},
+			testPut() {
+				this.logRequest('PUT', '未写入')
+				
+			},
+			testDelete() {
+				this.logRequest('DELETE', '未写入')
+				
+			},
+			testUpload() {
+				this.logRequest('UPLOAD', '未写入')
+			},
 			testDownload() {
+				this.logRequest('DOWNLAOD')
+				this.isLoading = true
 				downloadFile(e => {
-					this.responseText = this.responseText.concat('<br/>').concat(JSON.stringify(e))
+					this.responseText = this.responseText.concat(JSON.stringify(e)).concat(`--------<span style='color: blue;'>进度回调</span>`)
 				}).then(res => {
-					this.logAppend(JSON.stringify(res))
+					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logRequest('DOWNLAOD', 'END')
+					this.isLoading = false
 				}).catch(e => {
-					this.logAppend(JSON.stringify(e))
+					this.isLoading = false
+					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logRequest('DOWNLAOD', 'ERROR END')
 				})
 			}
 
@@ -50,20 +119,36 @@
 
 <style lang="scss" scoped>
 	.content {
-		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		position: relative;
+		font-size: 12px;
 
 		.response {
-			height: 80vh;
-			padding: 20px;
 			overflow-y: auto;
 			word-break: break-word;
+			height: calc(100vh - 76px);
+			box-sizing: border-box;
+			padding: 10px;
 		}
 
 		.button-group {
 			display: flex;
+			width: 100%;
+			position: sticky;
+			flex-flow: row nowrap;
+			box-shadow: 0 2px 4px #ccc;
+
+			button {
+				font-size: 12px;
+				border: 1px dashed black;
+				margin: 0;
+
+				&:nth-child(n):not(:first-child) {
+					border-left: none;
+				}
+			}
 		}
 	}
 </style>
