@@ -5,6 +5,7 @@
 			<button type="default" @click="testPost()">POST</button>
 			<button type="default" @click="testPut()">PUT</button>
 			<button type="default" @click="testDelete()">DELETE</button>
+			<button type="default" @click="testError()">ERROR</button>
 			<button type="default" @click="testUpload()">UPLOAD</button>
 			<button type="default" @click="testDownload()">DOWNLOAD</button>
 		</view>
@@ -31,13 +32,9 @@
 		onLoad() {},
 		watch: {
 			isLoading(val) {
-				if(val) {
-					uni.showLoading({
-						title:'LOADING...'
-					})
-				}else {
-					uni.hideLoading()
-				}
+				uni[val ? 'showLoading' : 'hideLoading']({
+					title: 'LOADING...'
+				})
 			}
 		},
 		methods: {
@@ -49,16 +46,15 @@
 					`<p style='color: blue;text-align:center; line-height: 30px;'>========${method}=${suffix}========</p>`)
 			},
 			testGet() {
-				this.logRequest('GET','根据域名查询百度收录')
+				this.logRequest('GET', '根据域名查询百度收录')
 				this.isLoading = true
 				_get().then(res => {
-					console.log('res:', res);
-					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logAppend(JSON.stringify(res) + `--------<span style='color: blue;'>返回数据</span>`)
 					this.logRequest('GET', 'END')
 					this.isLoading = false
 				}).catch(e => {
 					this.isLoading = false
-					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logAppend(JSON.stringify(e) + `--------<span style='color: red;'>【请求异常】</span>`)
 					this.logRequest('GET', 'ERROR END')
 				})
 				/* customGet().then(res => {
@@ -76,39 +72,42 @@
 				this.logRequest('POST', '随机获取一条txt语句')
 				this.isLoading = true
 				_post().then(res => {
-					console.log('res:', res);
-					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logAppend(JSON.stringify(res) + `--------<span style='color: blue;'>返回数据</span>`)
 					this.logRequest('POST', 'END')
 					this.isLoading = false
 				}).catch(e => {
 					this.isLoading = false
-					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logAppend(JSON.stringify(e) + `--------<span style='color: red;'>【请求异常】</span>`)
 					this.logRequest('POST', 'ERROR END')
 				})
 			},
 			testPut() {
 				this.logRequest('PUT', '未写入')
-				
+
 			},
 			testDelete() {
 				this.logRequest('DELETE', '未写入')
-				
+
 			},
 			testUpload() {
 				this.logRequest('UPLOAD', '未写入')
+			},
+			testError() {
+				this.logRequest('ERROR', '未写入')
 			},
 			testDownload() {
 				this.logRequest('DOWNLAOD')
 				this.isLoading = true
 				downloadFile(e => {
-					this.responseText = this.responseText.concat(JSON.stringify(e)).concat(`--------<span style='color: blue;'>进度回调</span>`)
+					this.responseText = this.responseText.concat(JSON.stringify(e)).concat(
+						`--------<span style='color: blue;'>进度回调</span>`)
 				}).then(res => {
-					this.logAppend(JSON.stringify(res)+ `--------<span style='color: blue;'>返回数据</span>`)
+					this.logAppend(JSON.stringify(res) + `--------<span style='color: blue;'>返回数据</span>`)
 					this.logRequest('DOWNLAOD', 'END')
 					this.isLoading = false
 				}).catch(e => {
 					this.isLoading = false
-					this.logAppend(JSON.stringify(e)+ `--------<span style='color: red;'>【请求异常】</span>`)
+					this.logAppend(JSON.stringify(e) + `--------<span style='color: red;'>【请求异常】</span>`)
 					this.logRequest('DOWNLAOD', 'ERROR END')
 				})
 			}
@@ -137,7 +136,7 @@
 			display: flex;
 			width: 100%;
 			position: sticky;
-			flex-flow: row nowrap;
+			flex-flow: row wrap;
 			box-shadow: 0 2px 4px #ccc;
 
 			button {

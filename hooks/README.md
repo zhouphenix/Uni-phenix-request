@@ -8,8 +8,6 @@ uniapp 网络请求插件封——基于uni request原生
 同时也是熟悉插件发布流程， 源码作了部分修改（非bug，自身需求），使用方式未变化，如何使用？[传送门]( https://ext.dcloud.net.cn/plugin?id=946)
 
 
-
-
 ## 主要功能：
 + 支持异步拦截器（请求/响应拦截器中支持异步操作并阻塞）
 + 支持Promise 操作，错误捕获
@@ -40,7 +38,7 @@ export default request
 可以设置多个, 同时可以也可以使用异步方法。拦截器回调函数接受4个参数，分别是 config, method, url, data。其中 config 中包含请求头和请求体（ uploadFile()请求的请求体只包含 formData 部分），同时也可以在请求拦截器中取消请求：
 
 ```
-request.interceptors.request.use(async (config, ...args) => {
+request.interceptors.request.use((config, ...args) => {
     await new Promise(resolve => setTimeout(() => resolve(), 3000))
     console.log('请求拦截器, 网络请求会等 3 秒后上面的异步任务结束后执行') // args[0] method args[1] url args[3] data
     config.header.Authorization = 'Bearer ' + $store.state.app.token // 修改请求头
@@ -65,11 +63,14 @@ request.interceptors.response.use((response, ...args) => { // 响应拦截器（
 ```
 
 ## 全局错误监听
-当某个请求出现 请求失败、超时、服务器请求异常、主动取消等都会触发 方法。 接收4个参数，分别是 method url data reason（失败原因）。 事件一个 request 实例只能设置一个，后设置的会覆盖前面的。 中也支持异步操作：
+ 请求失败、超时、服务器请求异常、主动取消等都会触发 方法。
+ 接收4个参数，分别是 method url data reason（失败原因）。 事件一个 request 实例只能设置一个，后设置的会覆盖前面的。（“on error”  好像被屏蔽了Σ(☉▽☉"a）：
 
 ```
-request. = async (...args) => { // 请求失败统一处理方法（可以也可以使用异步方法）
-    console.log('网络请求失败了', `url为${args[1]}`)
+request['onerror'] = function(...e) {
+	// 如果返回异常， 此处却为执行， 说明没有执行到网络请求逻辑， 检查拦截器是否设置正确
+	console.log('onerror::', e);
+	return false // 返回true 将拦截reject/resolve， 及Promise catch方法执行
 }
 ```
 
@@ -90,19 +91,32 @@ request.get('http://xxx.com').then(res => { // 也可以使用配置的 baseURL 
 |--	|--	|--	|--	|--	|
 |url			|String		|url					|是		|—        |
 |data			|Object		|data					|否		|{}       |
-|header			|Object		|自定义请求头			|否		|{}       |
-|reqIntercept	|Boolean	|是否被请求拦截器拦截	|否		|true     |
-|resIntercept	|Boolean	|是否被响应拦截器拦截	|否		|true     |
+|header			|Object		|object自定义请求头			|否		|{}       |
+|~~reqIntercept~~	|Boolean	|是否被请求拦截器拦截 `depressed`	|否		|true     |
+|~~resIntercept~~	|Boolean	|是否被响应拦截器拦截 `depressed`	|否		|true     |
 
+取消拦截器操作变为
 
+```
+function testInterceptor(config, ...args) {
+	return config
+}
+
+request.interceptors.request.use(testInterceptor)
+request.interceptors.request.eject(testInterceptor)
+
+// 或者
+const id = request.interceptors.request.use(testInterceptor)
+request.interceptors.request.eject(id)
+```
 
 ```
 request.request({
 	url:'/', 
 	data:{ name: 'zhangsan' }, 
 	header:{ 'Content-Type': 'application/x-www-form-urlencoded' }, 
-	reqIntercept: false, 
-	resIntercept: false
+//	reqIntercept: false,  // depressed 不再支持
+//	resIntercept: false   // depressed 不再支持
 }).then(res => {
     console.log(res)
 }).catch(e => console.error(e)) // 此请求不被被任意拦截器拦截
@@ -137,7 +151,7 @@ request.upload('/upload', callback, {
 download 方法接受4个参数：url, onProgressUpdate, data, header
 
 ```
-request.uploadFile('/download', callback, data:{},  header: {}).then(res => {
+request.download ('/download', callback, data:{},  header: {}).then(res => {
     console.log(res) // cookies: [], errMsg: "downloadFile:ok", header: { ... },statusCode: 200, tempFilePath: "http://tmp/w...d2.jpg"
 }).catch(e => console.error(e))
 ```

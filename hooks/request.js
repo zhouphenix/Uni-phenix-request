@@ -5,7 +5,18 @@ const interceptors = {
 	request: {
 		interceptors: [],
 		use(func) {
-			this.interceptors.push(func)
+			return this.interceptors.push(func) // 返回长度, 作为识别id
+		},
+		eject(interceptor) {
+			if (typeof interceptor === 'number') {
+				const rs = this.interceptors.splice(interceptor - 1, 1) //返回一个列表
+				return rs.length > 0 //length > 0 : 删除成功
+			} else {
+				const index = this.interceptors.indexOf(interceptor)
+				const rs = this.interceptors.splice(index, 1) //返回一个列表
+				return rs.length > 0 //length > 0 : 删除成功
+			}
+
 		},
 		intercept(config, url, method, data) {
 			this.interceptors.forEach(it => {
@@ -17,7 +28,17 @@ const interceptors = {
 	response: {
 		interceptors: [],
 		use(func) {
-			this.interceptors.push(func)
+			return this.interceptors.push(func)
+		},
+		eject(interceptor) {
+			if (typeof interceptor === 'number') {
+				const rs = this.interceptors.splice(interceptor - 1, 1) //返回一个列表
+				return rs.length > 0 //length > 0 : 删除成功
+			} else {
+				const index = this.interceptors.indexOf(interceptor)
+				const rs = this.interceptors.splice(index, 1) //返回一个列表
+				return rs.length > 0 //length > 0 : 删除成功
+			}
 		},
 		intercept(response, url, method, data) {
 			this.interceptors.forEach(it => {
@@ -42,22 +63,18 @@ export default function({
 		 * @param method 请求方式， 默认GET
 		 * @param data 请求参数
 		 * @param header 请求头
-		 * @param reqIntercept 请求是否被拦截器拦截 ，默认启用
-		 * @param resIntercept 响应是否被拦截器拦截 ，默认启用
 		 */
 		request({
 			url,
 			method = 'GET',
 			data,
-			header,
-			reqIntercept = true,
-			resIntercept = true
+			header
 		}) {
 			let aborted = false, //// aborted 请求是否已被取消
 				requestTask, // requestTask 网络请求 task 对象
 				abort = () => { // abort 取消请求方法
 					aborted = true // 将请求状态标记为已取消
-					requestTask ? requestTask.abort() : '' // 执行取消请求方法
+					requestTask && requestTask.abort() // 执行取消请求方法
 				},
 				timer, // timer 检测超时定时器
 				overtime = false // overtime 请求是否超时
@@ -77,17 +94,18 @@ export default function({
 					header,
 					body: data,
 					cancel
-				} = reqIntercept ? this.interceptors.request.intercept(config, url, method, data) : config
+				} = this.interceptors.request.intercept(config, url, method, data)
+
 				if (aborted || cancel) { // 如果请求已被取消,停止执行,返回 reject
-					return reject('网络请求失败：主动取消')
+					return this.onerror('网络请求失败：主动取消') || reject('网络请求失败：主动取消')
 				}
 				// 请求超时执行方法
 				timer = setTimeout(_ => {
 					overtime = true // 将状态标记为超时，不会被 fail 中的 onerror 重复执行
-					requestTask.abort() // 执行取消请求方法
+					requestTask && requestTask.abort() // 执行取消请求方法
 					reject('网络请求时间超时') // reject 原因
 				}, timeout || 15000) // 设定检测超时定时器
-				
+
 				requestTask = uni.request({
 					url: url[0] === '/' ? baseUrl + url : url,
 					data,
@@ -96,14 +114,10 @@ export default function({
 					success: res => { // 网络请求成功
 						// 清除检测超时定时器
 						clearTimeout(timer)
-
 						if (!codes.includes(res.statusCode)) {
-							reject(`网络请求异常：服务器响应异常：状态码：${res.statusCode}`)
+							this.onerror(`网络请求异常：服务器响应异常：状态码：${res.statusCode}`) || reject(`网络请求异常：服务器响应异常：状态码：${res.statusCode}`)
 						} else {
-							if (resIntercept) {
-								// 执行响应拦截器
-								res = this.interceptors.response.intercept(res, url, method, data) // 执行响应拦截器
-							}
+							res = this.interceptors.response.intercept(res, url, method, data) // 执行响应拦截器
 							resolve(res.data)
 						}
 					},
@@ -111,10 +125,12 @@ export default function({
 					fail: res => { // 网络请求失败
 						// 清除检测超时定时器
 						clearTimeout(timer)
-						if (aborted) {
-							reject('网络请求失败：主动取消')
+						// 如果不是请求超时
+						if (overtime) {
+							this.onerror(method, url, data, res || '请求超时') || reject(res || '请求超时')
 						} else {
-							reject('网络请求失败：（URL无效|无网络|DNS解析失败）')
+							const errorMsg = aborted ? '网络请求失败：主动取消' : '网络请求失败：（URL无效|无网络|DNS解析失败）'
+							this.onerror(method, url, data, errorMsg) || reject(errorMsg)
 						}
 					}
 
@@ -146,9 +162,7 @@ export default function({
 			method = 'downloadFile',
 			data = {},
 			header,
-			onProgressUpdate,
-			reqIntercept = true,
-			resIntercept = true
+			onProgressUpdate
 		}) {
 			let aborted = false, //// aborted 请求是否已被取消
 				requestTask, // requestTask 网络请求 task 对象
@@ -174,9 +188,9 @@ export default function({
 					header,
 					body,
 					cancel
-				} = reqIntercept ? this.interceptors.request.intercept(config, url, method, data) : config
+				} = this.interceptors.request.intercept(config, url, method, data)
 				if (aborted || cancel) { // 如果请求已被取消,停止执行,返回 reject
-					return reject('网络请求失败：主动取消')
+					return this.onerror(method, url, data, '网络请求失败：主动取消') || reject('网络请求失败：主动取消')
 				}
 				// 请求超时执行方法
 				timer = setTimeout(_ => {
@@ -196,12 +210,11 @@ export default function({
 						clearTimeout(timer)
 
 						if (!codes.includes(res.statusCode)) {
-							reject(`网络请求异常：服务器响应异常：状态码：${res.statusCode}`)
+							this.onerror(method, url, data, `网络请求异常：服务器响应异常：状态码：${res.statusCode}`) || reject(
+								`网络请求异常：服务器响应异常：状态码：${res.statusCode}`)
 						} else {
-							if (resIntercept) {
-								// 执行响应拦截器
-								res = this.interceptors.response.intercept(res, url, method, data) // 执行响应拦截器
-							}
+							// 执行响应拦截器
+							res = this.interceptors.response.intercept(res, url, method, data) // 执行响应拦截器
 							resolve(res)
 						}
 					},
@@ -340,6 +353,7 @@ export default function({
 				},
 				onProgressUpdate
 			})
-		}
+		},
+		onerror: (...args) => {} // 请求错误钩子函数集合
 	}
 }
